@@ -1,0 +1,41 @@
+{
+  "commentTranslate.targetLanguage": "zh-TW",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.fontFamily": "MesloLGS NF",
+  "[java]": {
+    "editor.formatOnSave": false
+  },
+  "workbench.colorCustomizations": {
+    "[Default Dark Modern]": {
+      "tab.activeBorderTop": "#00FF00",
+      "tab.unfocusedActiveBorderTop": "#00FF0088",
+      "textCodeBlock.background": "#00000055"
+    },
+    "editor.wordHighlightStrongBorder": "#FF6347",
+    "editor.wordHighlightBorder": "#FFD700",
+    "editor.selectionHighlightBorder": "#A9A9A9",
+    "terminal.background": "#1D1F21",
+    "terminal.foreground": "#C5C8C6",
+    "terminalCursor.background": "#C5C8C6",
+    "terminalCursor.foreground": "#C5C8C6",
+    "terminal.ansiBlack": "#1D1F21",
+    "terminal.ansiBlue": "#3971ED",
+    "terminal.ansiBrightBlack": "#969896",
+    "terminal.ansiBrightBlue": "#3971ED",
+    "terminal.ansiBrightCyan": "#3971ED",
+    "terminal.ansiBrightGreen": "#198844",
+    "terminal.ansiBrightMagenta": "#A36AC7",
+    "terminal.ansiBrightRed": "#CC342B",
+    "terminal.ansiBrightWhite": "#FFFFFF",
+    "terminal.ansiBrightYellow": "#FBA922",
+    "terminal.ansiCyan": "#3971ED",
+    "terminal.ansiGreen": "#198844",
+    "terminal.ansiMagenta": "#A36AC7",
+    "terminal.ansiRed": "#CC342B",
+    "terminal.ansiWhite": "#C5C8C6",
+    "terminal.ansiYellow": "#FBA922",
+    "debugConsole.infoForeground": "#00ff66",
+    "debugConsole.errorForeground": "#CC342B",
+    "debugConsole.warningForeground": "#FBA922"
+  }
+}
