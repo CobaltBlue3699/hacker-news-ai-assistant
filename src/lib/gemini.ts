@@ -6,6 +6,6 @@ const google = createGoogleGenerativeAI({
 });
 
 // Helper models
-export const geminiFlashModel = google('gemini-2.5-flash');
+export const geminiFlashModel = google(process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-2.5-flash');
 // Embedding model
-export const geminiEmbeddingModel = google.embeddingModel('gemini-embedding-001');
+export const geminiEmbeddingModel = google.embeddingModel(process.env.GOOGLE_GENERATIVE_AI_EMBEDDING_MODEL || 'gemini-embedding-001');
