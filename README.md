@@ -33,6 +33,8 @@ Required variables:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key (public).
 - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase Service Role Key (for backend ingestion).
 - `GOOGLE_GENERATIVE_AI_API_KEY`: Your Google Gemini API Key.
+- `GOOGLE_GENERATIVE_AI_MODEL`: Your Google Gemini AI model.
+- `GOOGLE_GENERATIVE_AI_EMBEDDING_MODEL`: Your Google Gemini embedding model.
 - `CRON_SECRET`: A secret string to protect the ingestion API (optional but recommended).
 
 ### 2. Database Migration
