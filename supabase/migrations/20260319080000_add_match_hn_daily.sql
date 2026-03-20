@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION match_hn_daily (
-  query_embedding vector(768),          -- 確認你的 embedding 維度
-  match_threshold float DEFAULT 0.75,   -- 加 default 值，方便呼叫
+  query_embedding extensions.vector(768), -- 使用 extensions.vector
+  match_threshold float DEFAULT 0.75,
   match_count int DEFAULT 10
 )
 RETURNS TABLE (
@@ -14,6 +14,8 @@ RETURNS TABLE (
   similarity float
 )
 LANGUAGE sql STABLE
+-- 關鍵修正：設定搜尋路徑，讓函式能找到 extensions 裡的 <=> 運算子
+SET search_path = public, extensions
 AS $$
   SELECT
     hn_daily.id,
@@ -27,5 +29,5 @@ AS $$
   FROM hn_daily
   WHERE 1 - (hn_daily.embedding <=> query_embedding) > match_threshold
   ORDER BY hn_daily.embedding <=> query_embedding ASC
-  LIMIT LEAST(match_count, 50);   -- 防爆量
+  LIMIT LEAST(match_count, 50);
 $$;
