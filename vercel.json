@@ -1,0 +1,7 @@
+{
+  "crons": [{
+    "path": "/api/hn-daily",
+    "schedule": "0 0 * * *"
+  }],
+  "regions": ["sin1"]
+}
