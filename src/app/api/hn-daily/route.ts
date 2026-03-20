@@ -3,7 +3,7 @@ import { getTopStories, fetchArticleContent } from '@/lib/hn-scraper';
 import { generateSummary, generateEmbedding } from '@/lib/ai-processor';
 import { supabaseAdmin } from '@/lib/supabase';
 
-export const maxDuration = 60; // Allow up to 60 seconds for execution
+export const maxDuration = 120; // Allow up to 60 seconds for execution
 
 export async function GET(request: Request) {
   // Authorization check for Vercel Cron
