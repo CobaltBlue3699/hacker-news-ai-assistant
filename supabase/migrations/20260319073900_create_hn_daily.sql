@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.hn_daily (
     points INTEGER DEFAULT 0,
     summary TEXT,
     url TEXT,
-    embedding VECTOR (768), -- Gemini text-embedding-004 使用 768 維度
+    embedding VECTOR (768), -- Gemini text-embedding 使用 768 維度 (pgvector HNSW 限制為 2000)
     created_at TIMESTAMPTZ DEFAULT NOW(),
     -- 確保每天的排名是唯一的
     UNIQUE (date, rank)

@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HN Daily AI Assistant
 
-## Getting Started
+A personal AI chat assistant that scrapes Hacker News top stories, summarizes them in Traditional Chinese, and allows you to chat with the content using RAG (Retrieval-Augmented Generation).
 
-First, run the development server:
+## Features
+
+- **Daily Scraper**: Fetches top 5 HN stories (Title, URL, Points).
+- **AI Processing**:
+  - Summarizes articles in Traditional Chinese using Google Gemini 1.5 Flash.
+  - Generates vector embeddings for semantic search.
+- **RAG Chat**: Chat interface to query daily news, powered by Vercel AI SDK and Supabase pgvector.
+- **Tool Calling**: Can fetch full article content on demand during chat.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Database**: Supabase (PostgreSQL + pgvector)
+- **AI**: Google Gemini API (via Vercel AI SDK)
+- **Styling**: Tailwind CSS
+
+## Setup
+
+### 1. Environment Variables
+
+Copy `.env.example` to `.env` and fill in your keys:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key (public).
+- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase Service Role Key (for backend ingestion).
+- `GOOGLE_GENERATIVE_AI_API_KEY`: Your Google Gemini API Key.
+- `CRON_SECRET`: A secret string to protect the ingestion API (optional but recommended).
+
+### 2. Database Migration
+
+Run the Supabase migrations to create the table and functions:
+
+```bash
+# If using Supabase CLI locally:
+npm run supabase:migration:up
+
+# Or manually run the SQL files in `supabase/migrations/` in your Supabase Dashboard SQL Editor.
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Trigger Data Ingestion
 
-## Learn More
+To populate the database with today's stories, visit the API route manually (or set up a Cron job):
 
-To learn more about Next.js, take a look at the following resources:
+```
+GET http://localhost:3000/api/hn-daily
+```
+*Note: If you set a `CRON_SECRET`, you must provide it in the `Authorization: Bearer <SECRET>` header.*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Chat
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Go to the home page and start asking questions:
+- "今天 HN 有什麼有趣的？"
+- "請總結那篇關於 AI 的文章"

@@ -4,6 +4,9 @@
       "command": "npx",
       "args": ["-y", "next-devtools-mcp@latest"],
       "trust": true
+    },
+    "supabase": {
+      "url": "http://127.0.0.1:54321/mcp"
     }
   }
 }

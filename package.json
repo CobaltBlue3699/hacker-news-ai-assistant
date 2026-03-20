@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "list:models": "pnpm dlx tsx scripts/check-models.ts",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
@@ -18,8 +19,10 @@
     "supabase:migration:list": "supabase migration list",
     "supabase:db-pull": "supabase db pull",
     "supabase:db-push": "supabase db push",
-    "supabase:seed": "supabase db reset"
-
+    "supabase:seed": "supabase db reset",
+    "preversion": "pnpm run lint",
+    "version": "pnpm run build && git add -A",
+    "postversion": "git push && git push --tags"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
@@ -40,6 +43,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.0",
     "tailwindcss": "^4",
