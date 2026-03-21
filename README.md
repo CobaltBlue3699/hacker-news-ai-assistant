@@ -3,10 +3,7 @@
 A personal AI chat assistant that scrapes Hacker News top stories, summarizes them in Traditional Chinese, and allows you to chat with the content using RAG (Retrieval-Augmented Generation).
 
 ## Demo
-
-<video src="./assets/demo.mp4" controls="controls" style="max-width: 100%;">
-  Your browser does not support the video tag.
-</video>
+https://github.com/user-attachments/assets/70def472-0ae4-4162-be8a-de1001ba9e7c
 
 ## ✨ Features
 
