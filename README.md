@@ -2,9 +2,11 @@
 
 A personal AI chat assistant that scrapes Hacker News top stories, summarizes them in Traditional Chinese, and allows you to chat with the content using RAG (Retrieval-Augmented Generation).
 
-## 📺 Demo
+## Demo
 
-![HN Daily AI Assistant Demo](./assets/HN%20Daily%20AI%20Assistant.mp4)
+<video src="./assets/HN%20Daily%20AI%20Assistant.mp4" controls="controls" style="max-width: 100%;">
+  Your browser does not support the video tag.
+</video>
 
 ## ✨ Features
 
@@ -15,7 +17,7 @@ A personal AI chat assistant that scrapes Hacker News top stories, summarizes th
 - **RAG Chat**: Chat interface to query daily news, powered by **Vercel AI SDK** and **Supabase (pgvector)**.
 - **Tool Calling**: AI can fetch full article content on demand for deep analysis.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
 - **Database**: [Supabase](https://supabase.com/) (PostgreSQL + pgvector)
