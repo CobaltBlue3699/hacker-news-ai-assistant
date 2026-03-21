@@ -2,21 +2,25 @@
 
 A personal AI chat assistant that scrapes Hacker News top stories, summarizes them in Traditional Chinese, and allows you to chat with the content using RAG (Retrieval-Augmented Generation).
 
-## Features
+## 📺 Demo
+
+![HN Daily AI Assistant Demo](./assets/HN%20Daily%20AI%20Assistant.mp4)
+
+## ✨ Features
 
 - **Daily Scraper**: Fetches top 5 HN stories (Title, URL, Points).
 - **AI Processing**:
-  - Summarizes articles in Traditional Chinese using Google Gemini 1.5 Flash.
+  - Summarizes articles in Traditional Chinese using **Google Gemini 3.0 Flash**.
   - Generates vector embeddings for semantic search.
-- **RAG Chat**: Chat interface to query daily news, powered by Vercel AI SDK and Supabase pgvector.
-- **Tool Calling**: Can fetch full article content on demand during chat.
+- **RAG Chat**: Chat interface to query daily news, powered by **Vercel AI SDK** and **Supabase (pgvector)**.
+- **Tool Calling**: AI can fetch full article content on demand for deep analysis.
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **Database**: Supabase (PostgreSQL + pgvector)
-- **AI**: Google Gemini API (via Vercel AI SDK)
-- **Styling**: Tailwind CSS
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL + pgvector)
+- **AI**: [Google Gemini API](https://ai.google.dev/) (via [Vercel AI SDK](https://sdk.vercel.ai/))
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 
 ## Setup
 
