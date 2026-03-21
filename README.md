@@ -4,7 +4,7 @@ A personal AI chat assistant that scrapes Hacker News top stories, summarizes th
 
 ## Demo
 
-<video src="./assets/HN%20Daily%20AI%20Assistant.mp4" controls="controls" style="max-width: 100%;">
+<video src="./assets/demo.mp4" controls="controls" style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
 
