@@ -5,7 +5,7 @@ A personal AI chat assistant that scrapes Hacker News top stories, summarizes th
 ## Demo
 https://github.com/user-attachments/assets/70def472-0ae4-4162-be8a-de1001ba9e7c
 
-## ✨ Features
+## Features
 
 - **Daily Scraper**: Fetches top 5 HN stories (Title, URL, Points).
 - **AI Processing**:
@@ -20,6 +20,15 @@ https://github.com/user-attachments/assets/70def472-0ae4-4162-be8a-de1001ba9e7c
 - **Database**: [Supabase](https://supabase.com/) (PostgreSQL + pgvector)
 - **AI**: [Google Gemini API](https://ai.google.dev/) (via [Vercel AI SDK](https://sdk.vercel.ai/))
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+
+## Architecture & Documentation
+
+For detailed technical specifications and system design, please refer to:
+- **[Project Specification & Sequence Diagrams](docs/PROJECT_SPEC.md)**: 
+  - Detailed Tech Spec
+  - Cron Job Sync Logic (Sequence Diagram)
+  - User RAG Interaction Flow (Sequence Diagram)
+  - Database Schema Definitions
 
 ## Setup
 
