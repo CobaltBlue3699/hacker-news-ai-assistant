@@ -17,6 +17,10 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   title: "HN Daily AI Assistant",
   description: "Personal AI assistant for Hacker News daily summaries and chat.",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
