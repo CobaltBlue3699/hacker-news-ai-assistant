@@ -1,5 +1,7 @@
 'use client';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart, APICallError, isToolUIPart, getToolName } from 'ai';
 import { Send, User, Bot, Loader2, AlertCircle, RefreshCcw, ExternalLink, ChevronRight } from 'lucide-react';
@@ -180,13 +182,20 @@ export default function Home() {
                 <div className={cn(
                   "relative max-w-[90%] md:max-w-[80%] rounded-2xl px-5 py-4 text-sm md:text-base leading-relaxed shadow-sm",
                   m.role === 'user' 
-                    ? "bg-[#1E293B] text-white rounded-tr-none" 
+                    ? "bg-[#F97316] text-white rounded-tr-none" 
                     : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none"
                 )}>
-                  <div className="prose prose-slate dark:prose-invert max-w-none break-words whitespace-pre-wrap">
+                  <div className={cn(
+                    "max-w-none break-words",
+                    m.role === 'user' ? "prose-invert" : "prose"
+                  )}>
                     {m.parts.map((part, i) => {
                       if (part.type === 'text') {
-                        return <span key={i}>{part.text}</span>;
+                        return (
+                          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+                            {part.text}
+                          </ReactMarkdown>
+                        );
                       }
                       if (isToolUIPart(part)) {
                         return (

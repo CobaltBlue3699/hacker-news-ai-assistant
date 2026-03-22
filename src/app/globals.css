@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --primary: #f97316;
+  --primary-foreground: #ffffff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: #020617;
+  --foreground: #f1f5f9;
+  --primary: #f97316;
+  --primary-foreground: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)];
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom Prose-like Styles for Markdown Content */
+@layer components {
+  /* Manual Prose Implementation to avoid plugin resolution issues */
+  .prose {
+    @apply text-slate-700 dark:text-slate-300 leading-relaxed;
+  }
+
+  .prose h1, .prose h2, .prose h3 {
+    @apply font-serif font-bold text-slate-900 dark:text-slate-100 mt-6 mb-3;
+  }
+
+  .prose h1 { @apply text-2xl; }
+  .prose h2 { @apply text-xl; }
+  .prose h3 { @apply text-lg; }
+
+  .prose p {
+    @apply mb-4 last:mb-0;
+  }
+
+  .prose ul {
+    @apply list-disc list-outside ml-5 mb-4 space-y-1;
+  }
+
+  .prose ol {
+    @apply list-decimal list-outside ml-5 mb-4 space-y-1;
+  }
+
+  .prose li {
+    @apply pl-1;
+  }
+
+  .prose a {
+    @apply text-[#f97316] font-medium no-underline border-b border-orange-200 dark:border-orange-900 transition-colors hover:bg-orange-50 dark:hover:bg-orange-950/30;
+  }
+
+  .prose strong {
+    @apply font-bold text-slate-900 dark:text-white;
+  }
+
+  .prose blockquote {
+    @apply italic border-l-4 border-slate-200 dark:border-slate-800 pl-4 my-4;
+  }
+
+  .prose code:not(pre code) {
+    @apply bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-1.5 py-0.5 rounded text-[0.9em] font-mono font-medium;
+  }
+
+  .prose pre {
+    @apply bg-slate-900 dark:bg-black text-slate-50 p-4 rounded-xl my-4 overflow-x-auto font-mono text-sm border border-slate-800;
+  }
+
+  .prose table {
+    @apply w-full border-collapse my-6 text-sm;
+  }
+
+  .prose th {
+    @apply text-left p-2 border-b-2 border-slate-200 dark:border-slate-800 font-bold;
+  }
+
+  .prose td {
+    @apply p-2 border-b border-slate-100 dark:border-slate-900;
+  }
+
+  /* Prose Invert for Dark Backgrounds (User Bubbles) */
+  .prose-invert {
+    @apply text-white/90;
+  }
+  .prose-invert h1, .prose-invert h2, .prose-invert h3, .prose-invert strong {
+    @apply text-white;
+  }
+  .prose-invert code:not(pre code) {
+    @apply bg-white/20 text-white;
+  }
+  .prose-invert a {
+    @apply text-white underline decoration-white/30 hover:decoration-white;
+  }
+  .prose-invert ul, .prose-invert ol {
+    @apply text-white/90;
+  }
+}
+
+/* Animations from UI UX Skill */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
 }
