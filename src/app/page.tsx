@@ -192,7 +192,28 @@ export default function Home() {
                     {m.parts.map((part, i) => {
                       if (part.type === 'text') {
                         return (
-                          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown 
+                            key={i} 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node, ...props }) => (
+                                <a 
+                                  {...props} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className={cn(
+                                    "inline-flex items-center gap-1 font-bold transition-all underline decoration-2 underline-offset-2",
+                                    m.role === 'user' 
+                                      ? "text-white decoration-white/40 hover:decoration-white" 
+                                      : "text-[#EA580C] hover:text-[#F97316] decoration-[#F97316]/20 hover:decoration-[#F97316]"
+                                  )}
+                                >
+                                  {props.children}
+                                  <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+                                </a>
+                              )
+                            }}
+                          >
                             {part.text}
                           </ReactMarkdown>
                         );
