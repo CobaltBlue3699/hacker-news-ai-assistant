@@ -5,7 +5,7 @@ import { searchSimilarStories } from '@/lib/rag';
 import { fetchArticleContent } from '@/lib/hn-scraper';
 import { geminiFlashModel } from '@/lib/gemini';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const { messages: uiMessages } = await req.json();
