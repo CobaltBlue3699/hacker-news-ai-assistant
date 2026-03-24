@@ -11,12 +11,18 @@ export interface HNContext {
   similarity: number;
 }
 
-export async function searchSimilarStories(queryEmbedding: number[]): Promise<HNContext[]> {
+export async function searchSimilarStories(
+  queryEmbedding: number[],
+  startDate?: string,
+  endDate?: string
+): Promise<HNContext[]> {
   try {
     const { data: documents, error } = await supabaseAdmin.rpc('match_hn_daily', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.5, // Adjust based on testing
+      match_threshold: 0.3, // Lowered slightly to capture more relevant topics across days
       match_count: 10,
+      start_date: startDate || null,
+      end_date: endDate || null,
     });
 
     if (error) {

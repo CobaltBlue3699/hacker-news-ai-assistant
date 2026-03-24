@@ -22,12 +22,34 @@ export async function POST(req: Request) {
   // Convert UIMessages to CoreMessages for streamText
   const modelMessages = await convertToModelMessages(uiMessages);
 
-  // 1. RAG: Retrieve context from Supabase
+  // 1. RAG: Retrieve context from Supabase with optional date filtering
   let context = '';
   try {
     if (lastUserText) {
       const embedding = await generateEmbedding(lastUserText);
-      const similarStories = await searchSimilarStories(embedding);
+      
+      // Simple date detection
+      let startDate: string | undefined;
+      let endDate: string | undefined;
+      const now = new Date(); // In real app, this uses server time
+      const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+      if (lastUserText.includes('今天')) {
+        startDate = formatDate(now);
+        endDate = formatDate(now);
+      } else if (lastUserText.includes('昨天')) {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        startDate = formatDate(yesterday);
+        endDate = formatDate(yesterday);
+      } else if (lastUserText.includes('這週') || lastUserText.includes('本週') || lastUserText.includes('最近')) {
+        const lastWeek = new Date(now);
+        lastWeek.setDate(now.getDate() - 7);
+        startDate = formatDate(lastWeek);
+        endDate = formatDate(now);
+      }
+
+      const similarStories = await searchSimilarStories(embedding, startDate, endDate);
       
       if (similarStories.length > 0) {
         context = similarStories.map(story => 
