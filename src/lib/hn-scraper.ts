@@ -8,6 +8,17 @@ export interface HNStory {
   id: string;
 }
 
+export interface OpenGraphData {
+  image?: string;
+  title?: string;
+  description?: string;
+}
+
+export interface ArticleResult {
+  content: string;
+  og: OpenGraphData;
+}
+
 export async function getTopStories(limit = 5): Promise<HNStory[]> {
   try {
     const response = await fetch('https://news.ycombinator.com/', {
@@ -56,8 +67,10 @@ export async function getTopStories(limit = 5): Promise<HNStory[]> {
   }
 }
 
-export async function fetchArticleContent(url: string): Promise<string> {
-  if (!url || url.startsWith('item?id=')) return ''; // Skip internal HN links for now
+export async function fetchArticleContent(url: string): Promise<ArticleResult> {
+  const emptyResult: ArticleResult = { content: '', og: {} };
+
+  if (!url || url.startsWith('item?id=')) return emptyResult; // Skip internal HN links for now
 
   try {
     const controller = new AbortController();
@@ -73,18 +86,28 @@ export async function fetchArticleContent(url: string): Promise<string> {
     });
     clearTimeout(timeoutId);
 
-    if (!response.ok) return '';
+    if (!response.ok) return emptyResult;
 
     const html = await response.text();
     const $ = cheerio.load(html);
     
+    // Extract Open Graph Data
+    const og: OpenGraphData = {
+      image: $('meta[property="og:image"]').attr('content') || $('meta[name="twitter:image"]').attr('content'),
+      title: $('meta[property="og:title"]').attr('content') || $('title').text(),
+      description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content'),
+    };
+
     // Naive text extraction: remove scripts, styles, etc.
     $('script, style, nav, footer, header, aside').remove();
     const text = $('body').text().replace(/\s+/g, ' ').trim();
     
-    return text.slice(0, 5000); // Limit context window
+    return {
+      content: text.slice(0, 10000), // Updated to 10k context window
+      og,
+    };
   } catch (error) {
     console.warn(`Failed to fetch content for ${url}:`, error);
-    return '';
+    return emptyResult;
   }
 }

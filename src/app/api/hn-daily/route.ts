@@ -53,8 +53,8 @@ export async function GET(request: Request) {
       const targetRank = i + 1; // 重新定義當天的 1-5 名
 
       try {
-        // Fetch content
-        const content = await fetchArticleContent(story.url);
+        // Fetch content & Open Graph data
+        const { content, og } = await fetchArticleContent(story.url);
         
         // Generate Summary
         const summary = await generateSummary(story.title, content);
@@ -74,6 +74,9 @@ export async function GET(request: Request) {
             url: story.url,
             summary: summary,
             embedding: embedding,
+            og_image: og?.image || null,
+            og_title: og?.title || null,
+            og_description: og?.description || null,
           }, {
             onConflict: 'date, rank'
           });

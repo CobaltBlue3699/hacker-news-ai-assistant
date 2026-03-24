@@ -84,7 +84,8 @@ export async function POST(req: Request) {
         execute: async ({ url }) => {
           try {
             console.log(`[Tool: browse_page] Fetching URL: "${url}"`);
-            const content = await fetchArticleContent(url);
+            // Update: Destructure content from the new return type { content, og }
+            const { content } = await fetchArticleContent(url);
             console.log(`[Tool: browse_page] Success! Fetched ${content.length} characters.`);
             
             return {
