@@ -1,4 +1,4 @@
-import { convertToModelMessages, stepCountIs, streamText, tool, isTextUIPart, type TextUIPart } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText, tool } from 'ai';
 import { z } from 'zod';
 import { generateEmbedding } from '@/lib/ai-processor';
 import { searchSimilarStories } from '@/lib/rag';
@@ -9,81 +9,72 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   const { messages: uiMessages } = await req.json();
-  const lastMessage = uiMessages[uiMessages.length - 1];
-
-  // Extract text from the last message for RAG
-  const lastUserText = lastMessage.parts
-    ? lastMessage.parts
-        .filter(isTextUIPart)
-        .map((part: TextUIPart) => part.text)
-        .join('\n')
-    : lastMessage.content || '';
 
   // Convert UIMessages to CoreMessages for streamText
   const modelMessages = await convertToModelMessages(uiMessages);
 
-  // 1. RAG: Retrieve context from Supabase with optional date filtering
-  let context = '';
-  try {
-    if (lastUserText) {
-      const embedding = await generateEmbedding(lastUserText);
-      
-      // Simple date detection
-      let startDate: string | undefined;
-      let endDate: string | undefined;
-      const now = new Date(); // In real app, this uses server time
-      const formatDate = (d: Date) => d.toISOString().split('T')[0];
-
-      if (lastUserText.includes('今天')) {
-        startDate = formatDate(now);
-        endDate = formatDate(now);
-      } else if (lastUserText.includes('昨天')) {
-        const yesterday = new Date(now);
-        yesterday.setDate(now.getDate() - 1);
-        startDate = formatDate(yesterday);
-        endDate = formatDate(yesterday);
-      } else if (lastUserText.includes('這週') || lastUserText.includes('本週') || lastUserText.includes('最近')) {
-        const lastWeek = new Date(now);
-        lastWeek.setDate(now.getDate() - 7);
-        startDate = formatDate(lastWeek);
-        endDate = formatDate(now);
-      }
-
-      const similarStories = await searchSimilarStories(embedding, startDate, endDate);
-      
-      if (similarStories.length > 0) {
-        context = similarStories.map(story => 
-          `- [${story.date}] #${story.rank} ${story.title} (${story.points} points): ${story.summary} (URL: ${story.url})`
-        ).join('\n');
-      }
-    }
-  } catch (error) {
-    console.error('Context retrieval failed:', error);
-    // Continue without context if RAG fails
-  }
+  // 1. Get current date for LLM context
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
 
   // 2. System Prompt
   const systemPrompt = `
-    You are a helpful and professional AI assistant for Hacker News (HN).
-    You speak Traditional Chinese (繁體中文).
+    You are a professional Hacker News (HN) AI assistant.
+    Current date: ${todayStr}.
     
-    Here is the relevant context from the daily top stories database:
-    ${context ? context : 'No relevant daily stories found in database.'}
+    Your capabilities:
+    1. Search the "HN Daily" database using the 'search_stories' tool. You can extract keywords and date ranges (YYYY-MM-DD) from the user's query.
+    2. Fetch full article content using the 'browse_page' tool if the summary is insufficient.
     
     Instructions:
-    - Prioritize using the provided context to answer questions about "today's news" or "recent popular stories".
-    - If the user asks for details about a specific story that are not in the summary, use the 'browse_page' tool to fetch the full content.
-    - If the user asks general questions, answer normally.
-    - Always answer in Traditional Chinese.
+    - ALWAYS respond in Traditional Chinese (繁體中文).
+    - If the user asks about "today", "yesterday", "this week", or specific dates on HN, use 'search_stories' with the appropriate date range.
+    - If the user asks general questions or topics without a time range, use 'search_stories' WITHOUT providing startDate and endDate to search the entire history.
+    - Prioritize using search results to answer queries about popular stories.
+    - If no relevant information is found in the database, inform the user politely.
+    - Maintain a professional and concise tone.
   `;
 
-  // 3. Stream Response
+  // 3. Stream Response with Tools
   const result = streamText({
     model: geminiFlashModel,
     system: systemPrompt,
     messages: modelMessages,
-    maxRetries: 0, // Disable automatic retries to preserve quota and handle 429 faster
+    maxRetries: 0,
     tools: {
+      search_stories: tool({
+        description: 'Search the Hacker News daily top stories database. Supports keyword and date range filtering.',
+        inputSchema: z.object({
+          query: z.string().describe('The keyword or topic to search for.'),
+          startDate: z.string().optional().describe('Start date in YYYY-MM-DD format.'),
+          endDate: z.string().optional().describe('End date in YYYY-MM-DD format.'),
+        }),
+        execute: async ({ query, startDate, endDate }) => {
+          try {
+            console.log(`[Tool: search_stories] Query: "${query}", Range: ${startDate} to ${endDate}`);
+            const embedding = await generateEmbedding(query);
+            const stories = await searchSimilarStories(embedding, startDate, endDate);
+            
+            if (stories.length === 0) {
+              return { message: 'No relevant stories found in the specified range.' };
+            }
+
+            return {
+              results: stories.map(s => ({
+                date: s.date,
+                rank: s.rank,
+                title: s.title,
+                points: s.points,
+                summary: s.summary,
+                url: s.url
+              }))
+            };
+          } catch (error) {
+            console.error('Search stories tool failed:', error);
+            return { error: 'An error occurred while searching the database.' };
+          }
+        },
+      }),
       browse_page: tool({
         description: 'Fetch the full content of a web page (article) to get more details.',
         inputSchema: z.object({
@@ -91,15 +82,18 @@ export async function POST(req: Request) {
         }),
         execute: async ({ url }) => {
           try {
+            console.log(`[Tool: browse_page] Fetching URL: "${url}"`);
             const content = await fetchArticleContent(url);
+            console.log(`[Tool: browse_page] Success! Fetched ${content.length} characters.`);
+            
             return {
-              summary: content.slice(0, 5000) || '無法獲取內容或內容為空。',
+              summary: content.slice(0, 5000) || 'Content is empty or could not be fetched.',
               fullLength: content.length,
               fetchedAt: new Date().toISOString(),
             };
           } catch (error) {
-            console.error('Fetch article failed:', error);
-            return { error: '擷取頁面內容時發生錯誤。' };
+            console.error(`[Tool: browse_page] Failed to fetch article: ${error}`);
+            return { error: 'An error occurred while fetching the page content.' };
           }
         },
       }),
