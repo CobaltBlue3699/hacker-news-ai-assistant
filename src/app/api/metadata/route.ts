@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { fetchArticleContent } from '@/lib/hn-scraper';
 
 export const runtime = 'edge';
 
@@ -12,17 +13,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Try to find existing metadata in our database
-    const { data, error } = await supabaseAdmin
+    // 1. 先嘗試從資料庫尋找現有的日報元數據
+    const { data } = await supabaseAdmin
       .from('hn_daily')
       .select('og_image, og_title, og_description')
       .eq('url', url)
       .limit(1)
       .single();
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
-      console.error('Database error:', error);
-    }
 
     if (data) {
       return NextResponse.json({
@@ -33,9 +30,20 @@ export async function GET(request: Request) {
       });
     }
 
-    // 2. If not found in DB (e.g. ad-hoc link), return basic info or empty
-    // Ideally, we could fetch OG data on the fly here, but to keep it fast/simple
-    // for MVP, we'll just return null if not in our daily curated list.
+    // 2. 資料庫未命中 (Cache Miss)，執行即時抓取 (Fetch OG Tags)
+    // 使用與日報爬蟲相同的 fetchArticleContent 函數以維持一致性
+    console.log(`Metadata cache miss for: ${url}, fetching real-time...`);
+    const { og } = await fetchArticleContent(url);
+
+    if (og && (og.title || og.image)) {
+      return NextResponse.json({
+        image: og.image,
+        title: og.title,
+        description: og.description,
+        source: 'scraper'
+      });
+    }
+
     return NextResponse.json({ error: 'Metadata not found' }, { status: 404 });
 
   } catch (error) {
