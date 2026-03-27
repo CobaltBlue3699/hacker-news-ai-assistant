@@ -19,12 +19,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. 抓取更多的候選文章 (Top 10)，以應對可能的重複
+    // 1. 抓取更多的候選文章 (Top 10)
     const candidates = await getTopStories(10);
     
-    // 2. 查詢「昨天以前」已經存過的 URL，避免內容重複
-    // 注意：不應包含今天，否則當天多次執行會導致今日內容被過濾掉
-    const todayDate = new Date().toISOString().split('T')[0];
+    // 2. 冪等性與重複處理過濾 (Idempotency)
+    // 查詢最近 3 天（包含今天）已處理過的 URL，確保不重複執行 AI 調用
+    const today = new Date().toISOString().split('T')[0];
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     const dateLimit = threeDaysAgo.toISOString().split('T')[0];
@@ -32,26 +32,28 @@ export async function GET(request: Request) {
     const { data: recentStories } = await supabaseAdmin
       .from('hn_daily')
       .select('url')
-      .lt('date', todayDate) // 小於今天
-      .gte('date', dateLimit); // 大於等於 3 天前
+      .gte('date', dateLimit); // 改為 >= 3天前，包含今天，實現冪等性
 
-    const recentUrls = new Set(recentStories?.map(s => s.url) || []);
+    const processedUrls = new Set(recentStories?.map(s => s.url) || []);
 
-    // 3. 篩選出「新面孔」，並只取前 5 篇
+    // 3. 篩選出「尚未處理」的新面孔，並取前 5 篇
     const freshStories = candidates
-      .filter(story => !recentUrls.has(story.url))
+      .filter(story => !processedUrls.has(story.url))
       .slice(0, 5);
 
     console.log(`Filtering complete: Found ${freshStories.length} new stories out of ${candidates.length} candidates.`);
 
-    const results = [];
-    const today = new Date().toISOString().split('T')[0];
+    if (freshStories.length === 0) {
+      return NextResponse.json({
+        message: 'No new stories to process today.',
+        date: today
+      });
+    }
 
-    // 4. 針對這 5 篇進行處理 (重新分配 1-5 的 Rank)
-    for (let i = 0; i < freshStories.length; i++) {
-      const story = freshStories[i];
-      const targetRank = i + 1; // 重新定義當天的 1-5 名
-
+    // 4. 併發處理 (Parallelization)
+    // 封裝單篇處理邏輯
+    const processStory = async (story: typeof freshStories[0], index: number) => {
+      const targetRank = index + 1;
       try {
         // Fetch content & Open Graph data
         const { content, og } = await fetchArticleContent(story.url);
@@ -68,7 +70,7 @@ export async function GET(request: Request) {
           .from('hn_daily')
           .upsert({
             date: today,
-            rank: targetRank, // 使用當天的新排名
+            rank: targetRank,
             title: story.title,
             points: story.points,
             url: story.url,
@@ -81,21 +83,22 @@ export async function GET(request: Request) {
             onConflict: 'date, rank'
           });
 
-        if (error) {
-          console.error(`Error saving story ${targetRank}:`, error);
-          results.push({ rank: targetRank, status: 'error', error: error.message });
-        } else {
-          results.push({ rank: targetRank, status: 'success', title: story.title });
-        }
-
-      } catch (innerError) {
-        console.error(`Error processing story ${targetRank}:`, innerError);
-        results.push({ rank: targetRank, status: 'error', error: String(innerError) });
+        if (error) throw error;
+        
+        return { rank: targetRank, status: 'success', title: story.title };
+      } catch (error) {
+        console.error(`Error processing story ${targetRank}:`, error);
+        return { rank: targetRank, status: 'error', error: String(error) };
       }
-    }
+    };
+
+    // 使用 Promise.all 同時處理所有新鮮文章
+    const results = await Promise.all(
+      freshStories.map((story, i) => processStory(story, i))
+    );
 
     return NextResponse.json({
-      message: 'HN Daily processing complete (Novelty-First)',
+      message: 'HN Daily processing complete (Parallel & Idempotent)',
       date: today,
       count: freshStories.length,
       results
