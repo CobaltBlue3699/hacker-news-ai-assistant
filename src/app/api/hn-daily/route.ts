@@ -38,7 +38,8 @@ export async function GET(request: Request) {
     const { data: recentStories, error: fetchError } = await supabaseAdmin
       .from('hn_daily')
       .select('url')
-      .gte('date', dateLimit);
+      .gte('date', dateLimit)
+      .neq('date', today);
 
     if (fetchError) {
       console.error('[HN Daily] Database error while checking for recent stories:', fetchError);
@@ -81,15 +82,19 @@ export async function GET(request: Request) {
       try {
         // Fetch content & Open Graph data
         console.log(`[HN Daily] [Story #${targetRank}] Fetching content...`);
-        const { content, og } = await fetchArticleContent(story.url);
+        const { content, comments, og } = await fetchArticleContent(story.url, story.id);
         
-        if (!content) {
+        const fullContent = comments.length > 0
+          ? `${content}\n---\nHN Comments (${comments.length}):\n${comments.map((c, i) => `${i + 1}. ${c}`).join('\n')}`
+          : content;
+
+        if (!fullContent) {
           console.warn(`[HN Daily] [Story #${targetRank}] Warning: No content extracted for this story.`);
         }
 
         // Generate Summary
         console.log(`[HN Daily] [Story #${targetRank}] Generating AI summary...`);
-        const summary = await generateSummary(story.title, content);
+        const summary = await generateSummary(story.title, fullContent);
         
         // Generate Embedding
         console.log(`[HN Daily] [Story #${targetRank}] Generating embedding...`);
