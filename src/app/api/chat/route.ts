@@ -19,22 +19,33 @@ export async function POST(req: Request) {
 
   // 2. System Prompt
   const systemPrompt = `
-    You are a professional Hacker News (HN) AI assistant.
-    Current date: ${todayStr}.
-    
-    Your capabilities:
-    1. Search the "HN Daily" database using the 'search_stories' tool. You can extract keywords and date ranges (YYYY-MM-DD) from the user's query.
-    2. Fetch full article content using the 'browse_page' tool if the summary is insufficient.
-    
-    Response Guidelines:
-    - ALWAYS respond in Traditional Chinese (繁體中文).
-    - When mentioning stories, ALWAYS include the source link using Markdown format: [Title](URL).
-    - If the user asks general questions like "What's interesting today?", first use 'search_stories'. 
-    - For the top 1 or 2 most relevant or interesting stories, proactively use 'browse_page' to get more details if the database summary is too brief.
-    - Structure your response with clear headings or bullet points for readability.
-    - If no relevant information is found in the database, inform the user politely.
-    - Maintain a professional, insightful, and concise tone.
-  `;
+You are a professional Hacker News (HN) AI assistant.
+Current date: ${todayStr}.
+
+TOOLS:
+1. search_stories: Search by keyword + date range (YYYY-MM-DD).
+2. browse_page: Fetch article content + HN comments for deep analysis.
+
+WORKFLOW - Trend Analysis (Multi-step Retrieval):
+When user asks about trends, changes, or comparisons (e.g., "AI 的變化", "過去三個月"):
+- Step 1: search_stories(query, startDate, endDate) for Period A
+- Step 2: search_stories(query, startDate, endDate) for Period B
+- Step 3: Compare results, summarize evolution
+
+WORKFLOW - Comment Analysis:
+When you fetch a page via browse_page, analyze the comments for:
+- **Conflict Points**: Top disagreements with the article
+- **Expert Insights**: Deep technical counter-arguments
+- **Consensus**: General community mood
+- **Signal vs Noise**: Focus on comments with substance, ignore one-liners
+
+RESPONSE RULES:
+- ALWAYS respond in Traditional Chinese (繁體中文)
+- ALWAYS include source links: [Title](URL)
+- Structure with headings and bullet points
+- Bold key insights
+- If no results found, suggest alternative search terms
+`;
 
   // 3. Stream Response with Tools
   const result = streamText({
@@ -47,7 +58,7 @@ export async function POST(req: Request) {
         description: `Search the Hacker News daily database by semantic similarity.
 - When user asks about "today", set startDate and endDate to today's date.
 - When user asks about a specific date or range, provide the dates.
-- When user asks general questions without time constraint, omit dates to search all.`,
+- To compare trends, you can call this tool multiple times with different date ranges.`,
         inputSchema: z.object({
           query: z.string().describe('The keyword or topic to search for.'),
           startDate: z.string().optional().describe('Start date in YYYY-MM-DD format.'),
@@ -80,20 +91,25 @@ export async function POST(req: Request) {
         },
       }),
       browse_page: tool({
-        description: 'Fetch the full content of a web page (article) to get more details.',
+        description: `Fetch article content + HN comments for deep analysis.
+Returns:
+- articleContent: Main article text
+- comments: Array of comments with metadata (author, time, reply count)
+- Use this to analyze community sentiment, find expert opinions, identify conflicts.`,
         inputSchema: z.object({
           url: z.url().describe('The URL of the article to fetch.'),
+          hnItemId: z.string().optional().describe('HN item ID for fetching comments (e.g., "8863"). If not provided, will try to extract from URL.'),
         }),
-        execute: async ({ url }) => {
+        execute: async ({ url, hnItemId }) => {
           try {
-            console.log(`[Tool: browse_page] Fetching URL: "${url}"`);
-            // Update: Destructure content from the new return type { content, og }
-            const { content } = await fetchArticleContent(url);
-            console.log(`[Tool: browse_page] Success! Fetched ${content.length} characters.`);
+            console.log(`[Tool: browse_page] Fetching URL: "${url}" (HN ID: ${hnItemId || 'auto'})`);
+            const { content, comments } = await fetchArticleContent(url, hnItemId);
+            console.log(`[Tool: browse_page] Success! Fetched ${content.length} chars and ${comments.length} comments.`);
             
             return {
-              summary: content.slice(0, 5000) || 'Content is empty or could not be fetched.',
-              fullLength: content.length,
+              articleContent: content.slice(0, 8000) || 'Content is empty.',
+              comments: comments.slice(0, 20),
+              commentCount: comments.length,
               fetchedAt: new Date().toISOString(),
             };
           } catch (error) {
@@ -103,7 +119,7 @@ export async function POST(req: Request) {
         },
       }),
     },
-    stopWhen: stepCountIs(5), // Allow up to 5 steps (initial + 4 tool roundtrips)
+    stopWhen: stepCountIs(8),
   });
 
   return result.toUIMessageStreamResponse();

@@ -173,7 +173,14 @@ export async function fetchArticleContent(url: string, hnItemId?: string): Promi
   }
 }
 
-// 將 HN 的評論抓取成字串陣列的獨立函數
+interface HNCommentData {
+  id: number;
+  text?: string;
+  by?: string;
+  time?: number;
+  kids?: number[];
+}
+
 async function extractHNComments(hnItemId: string): Promise<string[]> {
   const startTime = Date.now();
   const comments: string[] = [];
@@ -182,9 +189,9 @@ async function extractHNComments(hnItemId: string): Promise<string[]> {
     return comments;
   }
   const loggerPrefix = `[HN Scraper] extractHNComments item ${hnItemId}`;
+  
   try {
     console.log(`${loggerPrefix} - starting fetch...`);
-    // fetch the top-level item to get its children (comment IDs)
     const itemUrl = `https://hacker-news.firebaseio.com/v0/item/${hnItemId}.json`;
     const itemResp = await fetch(itemUrl);
     if (!itemResp.ok) {
@@ -193,31 +200,63 @@ async function extractHNComments(hnItemId: string): Promise<string[]> {
     }
     const itemData: { kids?: number[] } = await itemResp.json();
     const kids: number[] = Array.isArray(itemData?.kids) ? itemData.kids : [];
-    const topN = Math.min(5, kids.length);
-
-    for (let i = 0; i < topN; i++) {
-      const kidId = kids[i];
+    
+    const fetchCount = Math.min(30, kids.length);
+    const commentPromises = kids.slice(0, fetchCount).map(async (kidId) => {
       try {
         const kidResp = await fetch(`https://hacker-news.firebaseio.com/v0/item/${kidId}.json`);
-        if (!kidResp.ok) {
-          console.warn(`${loggerPrefix}: comment ${kidId} fetch failed (${kidResp.status})`);
-          continue;
-        }
-        const commentData: { text?: string } = await kidResp.json();
-        const text = String(commentData?.text ?? '').trim();
-        if (text) {
-          // 直接用原始文本，避免過度加工
-          comments.push(text);
-        }
-      } catch (err) {
-        console.warn(`${loggerPrefix}: failed to fetch/comment ${kidId}:`, err);
+        if (!kidResp.ok) return null;
+        const data: HNCommentData = await kidResp.json();
+        return { ...data, id: kidId };
+      } catch {
+        return null;
       }
+    });
+
+    const rawComments = (await Promise.all(commentPromises)).filter((c): c is HNCommentData & { id: number } => c !== null && !!c.text);
+    
+    const scored = rawComments.map(c => ({
+      ...c,
+      replyCount: c.kids?.length ?? 0,
+      isEarly: (c.time ?? 0) > 0,
+    }));
+    scored.sort((a, b) => b.replyCount - a.replyCount);
+    
+    const valuable = scored.slice(0, 15);
+
+    for (const c of valuable) {
+      const age = c.time ? formatCommentAge(c.time) : '';
+      const meta = `[${c.by || 'anonymous'}${age ? ', ' + age : ''}${c.replyCount > 0 ? ', ' + c.replyCount + ' replies' : ''}]`;
+      let text = `${meta}\n${c.text}`;
+      
+      if (c.kids && c.kids.length > 0) {
+        try {
+          const replyResp = await fetch(`https://hacker-news.firebaseio.com/v0/item/${c.kids[0]}.json`);
+          if (replyResp.ok) {
+            const replyData: HNCommentData = await replyResp.json();
+            if (replyData.text) {
+              text += `\n  └─ [Reply by ${replyData.by || '?'}]: ${replyData.text}`;
+            }
+          }
+        } catch { }
+      }
+      comments.push(text);
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[HN Scraper] ${loggerPrefix}: fetched ${comments.length} comments in ${duration}ms.`);
+    console.log(`[HN Scraper] ${loggerPrefix}: fetched ${comments.length} valuable comments from ${rawComments.length} total in ${duration}ms.`);
   } catch (error) {
     console.error(`[HN Scraper] ${loggerPrefix}: Error extracting comments:`, error);
   }
   return comments;
+}
+
+function formatCommentAge(unixTime: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diffSeconds = now - unixTime;
+  const hours = Math.floor(diffSeconds / 3600);
+  if (hours < 1) return 'just now';
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
