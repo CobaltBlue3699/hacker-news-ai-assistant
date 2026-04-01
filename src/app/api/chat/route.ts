@@ -44,7 +44,10 @@ export async function POST(req: Request) {
     maxRetries: 0,
     tools: {
       search_stories: tool({
-        description: 'Search the Hacker News daily top stories database. Supports keyword and date range filtering.',
+        description: `Search the Hacker News daily database by semantic similarity.
+- When user asks about "today", set startDate and endDate to today's date.
+- When user asks about a specific date or range, provide the dates.
+- When user asks general questions without time constraint, omit dates to search all.`,
         inputSchema: z.object({
           query: z.string().describe('The keyword or topic to search for.'),
           startDate: z.string().optional().describe('Start date in YYYY-MM-DD format.'),
